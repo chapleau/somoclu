@@ -152,6 +152,17 @@ void train(int itask, float *data, svm_node **sparseData,
             }
         }
         currentEpoch++;
+
+       if ( (currentEpoch != nEpoch) && (currentEpoch % (nEpoch/100+1) != 0) ){}
+       else{
+              float ratio  =  currentEpoch/(float)nEpoch;
+              int   c      =  ratio * 50 + 1;
+              cerr << std::setw(7) << (int)(ratio*100) << "% [";
+              for (int x=0; x<c; x++) cout << "=";
+              for (int x=c; x<50; x++) cout << " ";
+              cerr << "]\r"; 
+       }  
+
 #ifdef HAVE_MPI        
         if (itask == 0) {
             epoch_time = MPI_Wtime() - epoch_time;
