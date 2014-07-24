@@ -56,6 +56,8 @@ struct core_data
 	int codebook_size;
 	int globalBmus_size;
 	int uMatrix_size;
+
+        int *global2ndBmus;
 };
 
 
@@ -111,7 +113,19 @@ void trainOneEpochSparseCPU(int itask, svm_node **sparseData, float *numerator,
                            unsigned int nSomX, unsigned int nSomY, 
                            unsigned int nDimensions, unsigned int nVectors,
                            unsigned int nVectorsPerRank, float radius, 
-                           float scale, string mapType, int *globalBmus);
+                           float scale, string mapType, int *globalBmus, int *global2ndBmus);
+
+////
+//from sparseCpuKernels
+void get_bmu_coord(float* codebook, svm_node **sparseData,
+                   unsigned int nSomY, unsigned int nSomX,
+                   unsigned int nDimensions, int* coords, int* coords2, unsigned int n);
+
+
+///
+
+
+
 void initializeCodebook(unsigned int seed, float *codebook, unsigned int nSomX,
                         unsigned int nSomY, unsigned int nDimensions);
 

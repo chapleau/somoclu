@@ -40,7 +40,7 @@ void initializeCodebook(unsigned int seed, float *codebook, unsigned int nSomX,
         for (unsigned int som_x = 0; som_x < nSomX; som_x++) {
             for (unsigned int d = 0; d < nDimensions; d++) {
                 int w = 0xFFF & rand();
-                w -= 0x800;
+                //w -= 0x800; //non-zero values
                 codebook[som_y*nSomX*nDimensions+som_x*nDimensions+d] = (float)w / 4096.0f;
             }
         }
@@ -118,7 +118,7 @@ core_data trainOneEpoch(int itask, float *data, svm_node **sparseData,
         trainOneEpochSparseCPU(itask, sparseData, numerator, denominator,
                                coreData.codebook, nSomX, nSomY, nDimensions,
                                nVectors, nVectorsPerRank, radius, scale,
-                               mapType, coreData.globalBmus);
+                               mapType, coreData.globalBmus,coreData.global2ndBmus);
         break;
     }
 

@@ -78,10 +78,11 @@ void train(int itask, float *data, svm_node **sparseData,
     core_data coreData;
     coreData.codebook = new float[nSomY*nSomX*nDimensions];
     coreData.globalBmus = NULL;
+    coreData.global2ndBmus = NULL;
     coreData.uMatrix = NULL;    
     if (itask == 0) {
         coreData.globalBmus = new int[nVectorsPerRank*int(ceil(nVectors/(double)nVectorsPerRank))*2];
-        
+        coreData.global2ndBmus = new int[nVectorsPerRank*int(ceil(nVectors/(double)nVectorsPerRank))*2];
         if (initialCodebookFilename.empty()){
             initializeCodebook(0, coreData.codebook, nSomX, nSomY, nDimensions);
         } else {
@@ -162,9 +163,9 @@ void train(int itask, float *data, svm_node **sparseData,
               cout << std::setw(7) << (int)(ratio*100) << "% [";
               for (int x=0; x<c; x++) cout << "=";
               for (int x=c; x<50; x++) cout << " ";
-              cout << "]\n" << flush;
-            }
-        }
+              cout << "]\n" << flush; 
+            }  
+        } 
 #endif        
     }
 #ifdef HAVE_MPI
@@ -189,6 +190,40 @@ void train(int itask, float *data, svm_node **sparseData,
             cout << "    Done!" << endl;
         }
         saveBmus(outPrefix + string(".bm"), coreData.globalBmus, nSomX, nSomY, nVectors); 
+        if (kernelType == SPARSE_CPU) {
+               saveBmus(outPrefix + string("_2nd.bm"), coreData.global2ndBmus, nSomX, nSomY, nVectors);
+
+               //re-calculate BMUs
+                int p1[2] = {0, 0};
+                int *bmus = new int[nVectorsPerRank*2];
+    
+                int p2[2] = {0, 0};
+                int *bmus2nd = new int[nVectorsPerRank*2];
+
+            #ifdef _OPENMP
+                #pragma omp parallel default(shared) private(p1,p2)
+            #endif
+                {
+            #ifdef _OPENMP
+                #pragma omp for
+            #endif
+                for (unsigned int n = 0; n < nVectorsPerRank; n++) {
+                  if (itask*nVectorsPerRank+n<nVectors) {
+                   /// get the best matching unit
+                   get_bmu_coord(coreData.codebook, sparseData, nSomY, nSomX,
+                                nDimensions, p1, p2, n);
+                   bmus[2*n] = p1[0]; bmus[2*n+1] = p1[1];
+                   bmus2nd[2*n] = p2[0]; bmus2nd[2*n+1] = p2[1];
+                  }
+                 }
+                }
+
+                //save
+                saveBmus(outPrefix + string("_after.bm"), bmus, nSomX, nSomY, nVectors);
+                saveBmus(outPrefix + string("_2nd_after.bm"), bmus2nd, nSomX, nSomY, nVectors);
+                delete [] bmus;
+                delete [] bmus2nd;
+        }
         ///
         /// Save codebook
         ///
@@ -199,5 +234,6 @@ void train(int itask, float *data, svm_node **sparseData,
 #endif
     delete [] coreData.codebook;
     delete [] coreData.globalBmus;
+    delete [] coreData.global2ndBmus;
     delete [] coreData.uMatrix;
 }

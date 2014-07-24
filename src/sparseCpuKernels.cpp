@@ -58,9 +58,10 @@ float get_distance(float* codebook, svm_node **sparseData,
  */
 void get_bmu_coord(float* codebook, svm_node **sparseData,
                    unsigned int nSomY, unsigned int nSomX,
-                   unsigned int nDimensions, int* coords, unsigned int n)
+                   unsigned int nDimensions, int* coords, int* coords2, unsigned int n)
 {
     float mindist = 9999.99;
+    float mindist2 = 9999.99;
     float dist = 0.0f;
 
     /// Check nSomX * nSomY nodes one by one and compute the distance
@@ -71,10 +72,21 @@ void get_bmu_coord(float* codebook, svm_node **sparseData,
             dist = get_distance(codebook, sparseData, som_y, som_x, nSomX,
                                 nDimensions, n);
             if (dist < mindist) {
-                mindist = dist;
+                //keep 2nd closest
+                coords2[0] = coords[0];
+                coords2[1] = coords[1];
+                mindist2 = mindist;
+
+                mindist = dist; 
                 coords[0] = som_x;
                 coords[1] = som_y;
+            } else if (dist < mindist2) {
+                mindist2 = dist;
+                //keep 2nd closest
+                coords2[0] = som_x;
+                coords2[1] = som_y;
             }
+
         }
     }
 }
@@ -84,12 +96,16 @@ void trainOneEpochSparseCPU(int itask, svm_node **sparseData, float *numerator,
                             unsigned int nSomX, unsigned int nSomY,
                             unsigned int nDimensions, unsigned int nVectors,
                             unsigned int nVectorsPerRank, float radius,
-                            float scale, string mapType, int *globalBmus)
+                            float scale, string mapType, int *globalBmus, int *global2ndBmus)
 {
     int p1[2] = {0, 0};
     int *bmus = new int[nVectorsPerRank*2];
+    
+    int p2[2] = {0, 0};
+    int *bmus2nd = new int[nVectorsPerRank*2];
+
 #ifdef _OPENMP
-    #pragma omp parallel default(shared) private(p1)
+    #pragma omp parallel default(shared) private(p1,p2)
 #endif
     {
 #ifdef _OPENMP
@@ -99,8 +115,9 @@ void trainOneEpochSparseCPU(int itask, svm_node **sparseData, float *numerator,
             if (itask*nVectorsPerRank+n<nVectors) {
                 /// get the best matching unit
                 get_bmu_coord(codebook, sparseData, nSomY, nSomX,
-                              nDimensions, p1, n);
+                              nDimensions, p1, p2, n);
                 bmus[2*n] = p1[0]; bmus[2*n+1] = p1[1];
+                bmus2nd[2*n] = p2[0]; bmus2nd[2*n+1] = p2[1];
             }
         }
     }
@@ -167,8 +184,13 @@ void trainOneEpochSparseCPU(int itask, svm_node **sparseData, float *numerator,
     for (unsigned int i=0; i < 2*nVectorsPerRank; ++i) {
       globalBmus[i]=bmus[i];
     }
+    for (unsigned int i=0; i < 2*nVectorsPerRank; ++i) {
+      global2ndBmus[i]=bmus2nd[i];
+    } 
+ 
 #endif
     delete [] bmus;
+    delete [] bmus2nd;
     delete [] localNumerator;
     delete [] localDenominator;
 }
