@@ -8,10 +8,10 @@
 %init %{
 import_array();
 %}
-%apply (float* INPLACE_ARRAY1, int DIM1) {(float* data, int data_length)}
-%apply (float* INPLACE_ARRAY1, int DIM1) {(float* codebook, int codebook_size)}
+%apply (FLOAT_T* INPLACE_ARRAY1, int DIM1) {(FLOAT_T* data, int data_length)}
+%apply (FLOAT_T* INPLACE_ARRAY1, int DIM1) {(FLOAT_T* codebook, int codebook_size)}
 %apply (int* INPLACE_ARRAY1, int DIM1) {(int* globalBmus, int globalBmus_size)}
-%apply (float* INPLACE_ARRAY1, int DIM1) {(float* uMatrix, int uMatrix_size)}
+%apply (FLOAT_T* INPLACE_ARRAY1, int DIM1) {(FLOAT_T* uMatrix, int uMatrix_size)}
 /* %typemap (in,numinputs=0) core_data * (core_data temp) { */
 /*   $1 = &temp; */
 /*  } */
@@ -42,9 +42,9 @@ import_array();
 /* %ignore core_data; */
 /* struct core_data */
 /* { */
-/* 	float *codebook; */
+/* 	FLOAT_T *codebook; */
 /* 	int *globalBmus; */
-/*         float *uMatrix; */
+/*         FLOAT_T *uMatrix; */
 /*   	int codebook_size; */
 /* 	int globalBmus_size; */
 /* 	int uMatrix_size; */

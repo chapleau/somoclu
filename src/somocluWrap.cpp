@@ -8,19 +8,19 @@ using namespace std;
 
 
 
-void trainWrapper(float *data, int data_length,
+void trainWrapper(FLOAT_T *data, int data_length,
                   unsigned int nEpoch,
                   unsigned int nSomX, unsigned int nSomY,
                   unsigned int nDimensions, unsigned int nVectors,
                   unsigned int radius0, unsigned int radiusN,
                   string radiusCooling,
-                  float scale0, float scaleN,
+                  FLOAT_T scale0, FLOAT_T scaleN,
                   string scaleCooling, unsigned int snapshots,
                   unsigned int kernelType, string mapType,
                   string initialCodebookFilename,
-                  float *codebook, int codebook_size,
+                  FLOAT_T *codebook, int codebook_size,
                   int *globalBmus, int globalBmus_size,
-                  float *uMatrix, int uMatrix_size)
+                  FLOAT_T *uMatrix, int uMatrix_size)
 {
   ///
   /// Codebook
@@ -30,7 +30,7 @@ void trainWrapper(float *data, int data_length,
   svm_node ** sparseData = NULL;
   core_data coreData;
   coreData.codebook_size = nSomY*nSomX*nDimensions;
-  coreData.codebook = new float[coreData.codebook_size];
+  coreData.codebook = new FLOAT_T[coreData.codebook_size];
   coreData.globalBmus = NULL;
   coreData.uMatrix = NULL;
   unsigned int nVectorsPerRank = nVectors;
@@ -114,7 +114,7 @@ void trainWrapper(float *data, int data_length,
   }
 #endif
   if(coreData.codebook != NULL){
-      memcpy(codebook, coreData.codebook, sizeof(float) *  codebook_size);
+      memcpy(codebook, coreData.codebook, sizeof(FLOAT_T) *  codebook_size);
       delete [] coreData.codebook;
     }
   if(coreData.globalBmus != NULL){
@@ -122,7 +122,7 @@ void trainWrapper(float *data, int data_length,
       delete [] coreData.globalBmus;
     }
   if(coreData.uMatrix != NULL){
-      memcpy(uMatrix, coreData.uMatrix, sizeof(float) *  uMatrix_size);
+      memcpy(uMatrix, coreData.uMatrix, sizeof(FLOAT_T) *  uMatrix_size);
       delete [] coreData.uMatrix;
     }
 }

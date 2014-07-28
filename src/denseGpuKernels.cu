@@ -24,11 +24,14 @@
 #include <map>
 #include <vector>
 #include <stdio.h>
+#include <algorithm>
 #include <cublas_v2.h>
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
 #include <thrust/reduce.h>
 #include <thrust/functional.h>
+
+#include <omp.h>
 
 #include "somoclu.h"
 
@@ -39,12 +42,19 @@
         cerr << "CUDA error calling \""#call"\", code is " << err << endl; \
         my_abort(err); }
 
+#define CUBLAS_CHECK(call) \
+     if((call) != CUBLAS_STATUS_SUCCESS) { \
+     cerr<< "CUBLAS error calling \""#call"\""<<endl; \
+     my_abort(-1); }
+ 
+
 //Globals
 cublasHandle_t handle;
-thrust::device_vector<float> deviceData;
-thrust::device_vector<float> deviceDataNorms;
-thrust::device_vector<float> deviceCodebook;
-thrust::device_vector<float> deviceCodebookNorms;
+thrust::device_vector<FLOAT_T> deviceData;
+thrust::device_vector<FLOAT_T> deviceDataNorms;
+thrust::device_vector<FLOAT_T> deviceCodebook;
+thrust::device_vector<FLOAT_T> deviceCodebookNorms;
+
 
 // convert a linear index to a row index
 template <typename T>
@@ -73,7 +83,7 @@ struct square : public thrust::unary_function<T,T>
     }
 };
 
-typedef thrust::tuple<int,float> argMinType;
+typedef thrust::tuple<int,FLOAT_T> argMinType;
 
 struct argMin : public thrust::binary_function<argMinType,argMinType,argMinType>
 {
@@ -107,7 +117,7 @@ thrust::device_vector<T> normsOfRowSpace(thrust::device_vector<T> A, int nRows, 
     return row_sums;
 }
 
-thrust::device_vector<argMinType> minsOfRowSpace(thrust::device_vector<float> A, int nRows, int nColumns) {
+thrust::device_vector<argMinType> minsOfRowSpace(thrust::device_vector<FLOAT_T> A, int nRows, int nColumns) {
     // allocate storage for row sums and indices
     thrust::device_vector<argMinType> row_sums(nRows);
     thrust::device_vector<int> row_indices(nRows);
@@ -125,12 +135,12 @@ thrust::device_vector<argMinType> minsOfRowSpace(thrust::device_vector<float> A,
 }
 
 template <int BLOCK_DIM>
-__global__ void euclidean(float *anorm2, float *bnorm2, float *M, int height, int width)
+__global__ void euclidean(FLOAT_T *anorm2, FLOAT_T *bnorm2, FLOAT_T *M, int height, int width)
 {
     unsigned int xIndex = blockIdx.x * BLOCK_DIM + threadIdx.x;
     unsigned int yStartIndex = blockIdx.y * BLOCK_DIM;
     if (xIndex < width) {
-        float bNormForX = bnorm2[xIndex];
+        FLOAT_T bNormForX = bnorm2[xIndex];
         unsigned int yEndIndex=(yStartIndex+BLOCK_DIM < height ? yStartIndex+BLOCK_DIM : height);
         for (unsigned int yIndex=yStartIndex; yIndex<yEndIndex; yIndex++) {
             unsigned int index=yIndex*width+xIndex;
@@ -159,15 +169,16 @@ void freeGpu()
     deviceDataNorms.clear();
     deviceCodebook.clear();
     deviceCodebookNorms.clear();
-    thrust::device_vector<float>().swap(deviceData);
-    thrust::device_vector<float>().swap(deviceDataNorms);
-    thrust::device_vector<float>().swap(deviceCodebook);
-    thrust::device_vector<float>().swap(deviceCodebookNorms);
+    thrust::device_vector<FLOAT_T>().swap(deviceData);
+    thrust::device_vector<FLOAT_T>().swap(deviceDataNorms);
+    thrust::device_vector<FLOAT_T>().swap(deviceCodebook);
+    thrust::device_vector<FLOAT_T>().swap(deviceCodebookNorms);
     cublasStatus_t status = cublasDestroy(handle);
     if (status != CUBLAS_STATUS_SUCCESS) {
         cerr << "!!!! shutdown error (A)\n";
         my_abort(-1);
     }
+
 }
 
 /** Find the best matching units -- called from the map function
@@ -179,16 +190,16 @@ void freeGpu()
  * @param nVectorsPerRank - the number of data points assigned to this GPU
  */
 
-void getBmusOnGpu(int *bmus, float *codebook, int nSomX, int nSomY, int nDimensions, int nVectorsPerRank)
+void getBmusOnGpu(int *bmus, FLOAT_T *codebook, int nSomX, int nSomY, int nDimensions, int nVectorsPerRank)
 {
-    deviceCodebook = thrust::device_vector<float>(codebook, codebook+nSomX*nSomY*nDimensions);
-    deviceCodebookNorms = normsOfRowSpace<float>(deviceCodebook, nSomX*nSomY, nDimensions);
-    thrust::device_vector<float> deviceGramMatrix(nSomX*nSomY*nVectorsPerRank, 0);
+    deviceCodebook = thrust::device_vector<FLOAT_T>(codebook, codebook+nSomX*nSomY*nDimensions);
+    deviceCodebookNorms = normsOfRowSpace<FLOAT_T>(deviceCodebook, nSomX*nSomY, nDimensions);
+    thrust::device_vector<FLOAT_T> deviceGramMatrix(nSomX*nSomY*nVectorsPerRank, 0);
 
     //Calculate the inner products of the data vectors and the weight vectors
 
-    float alpha = 1.0f;
-    float beta = 0.0f;
+    FLOAT_T alpha = 1.0f;
+    FLOAT_T beta = 0.0f;
 
     cublasStatus_t status = cublasSgemm(handle, CUBLAS_OP_T, CUBLAS_OP_N,
                                         nSomX*nSomY, nVectorsPerRank, nDimensions,
@@ -231,7 +242,7 @@ void getBmusOnGpu(int *bmus, float *codebook, int nSomX, int nSomY, int nDimensi
  * @param width - dimensions of a data instance
  */
 
-void initializeGpu(float *hostData, int nVectorsPerRank, int nDimensions, int nSomX, int nSomY)
+void initializeGpu(FLOAT_T *hostData, int nVectorsPerRank, int nDimensions, int nSomX, int nSomY)
 {
     /* Initialize CUBLAS */
     cublasStatus_t status = cublasCreate(&handle);
@@ -239,10 +250,11 @@ void initializeGpu(float *hostData, int nVectorsPerRank, int nDimensions, int nS
         cerr << "!!!! CUBLAS initialization error\n";
         my_abort(-1);
     }
-    deviceData = thrust::device_vector<float>(hostData, hostData+nVectorsPerRank*nDimensions);
-    deviceDataNorms = normsOfRowSpace<float>(deviceData, nVectorsPerRank, nDimensions);
-    deviceCodebook = thrust::device_vector<float>(nSomX*nSomY*nDimensions,0);
-    deviceCodebookNorms = thrust::device_vector<float>(nSomX*nSomY,0);
+    deviceData = thrust::device_vector<FLOAT_T>(hostData, hostData+nVectorsPerRank*nDimensions);
+    deviceDataNorms = normsOfRowSpace<FLOAT_T>(deviceData, nVectorsPerRank, nDimensions);
+    deviceCodebook = thrust::device_vector<FLOAT_T>(nSomX*nSomY*nDimensions,0);
+    deviceCodebookNorms = thrust::device_vector<FLOAT_T>(nSomX*nSomY,0);
+
 }
 
 /** Check and initialize a device attached to a node
@@ -329,19 +341,19 @@ void setDevice(int commRank, int commSize)
 
 /** One epoch on the GPU, dense variant
  */
-void trainOneEpochDenseGPU(int itask, float *data, float *numerator,
-                           float *denominator, float *codebook,
+void trainOneEpochDenseGPU(int itask, FLOAT_T *data, FLOAT_T *numerator,
+                           FLOAT_T *denominator, FLOAT_T *codebook,
                            unsigned int nSomX, unsigned int nSomY,
                            unsigned int nDimensions, unsigned int nVectors,
-                           unsigned int nVectorsPerRank, float radius,
-                           float scale, string mapType, int *globalBmus)
+                           unsigned int nVectorsPerRank, FLOAT_T radius,
+                           FLOAT_T scale, string mapType, int *globalBmus)
 {
     int bmus[nVectorsPerRank*2];
     getBmusOnGpu(bmus, codebook, nSomX, nSomY, nDimensions, nVectorsPerRank);
 
-    float *localNumerator = new float[nSomY*nSomX*nDimensions];
-    float *localDenominator = new float[nSomY*nSomX];
-
+    FLOAT_T *localNumerator = new FLOAT_T[nSomY*nSomX*nDimensions];
+    FLOAT_T *localDenominator = new FLOAT_T[nSomY*nSomX];
+    
     #pragma omp parallel default(shared)
     {
         #pragma omp for
@@ -353,29 +365,62 @@ void trainOneEpochDenseGPU(int itask, float *data, float *numerator,
             }
         }
         /// Accumulate denoms and numers
-        #pragma omp for
+        #pragma omp for schedule(dynamic)
         for (unsigned int som_y = 0; som_y < nSomY; som_y++) {
-            for (unsigned int som_x = 0; som_x < nSomX; som_x++) {
+          if ( omp_get_thread_num() == 0) {
+             //use GPU   
+             for (unsigned int som_x = 0; som_x < nSomX; som_x++) {
+                FLOAT_T * d_y = 0;
+                FLOAT_T * h_y = new FLOAT_T[nDimensions] (); //all zeros
+                CUDA_CHECK( cudaMalloc((void**)&d_y, nDimensions*sizeof(FLOAT_T)) );
+                CUBLAS_CHECK( cublasSetVector(nDimensions, sizeof(FLOAT_T), h_y, 1, d_y, 1) );
                 for (unsigned int n = 0; n < nVectorsPerRank; n++) {
                     if (itask*nVectorsPerRank+n<nVectors) {
-                        float dist = 0.0f;
+                        FLOAT_T dist = 0.0f;
                         if (mapType == "planar") {
                             dist = euclideanDistanceOnPlanarMap(som_x, som_y, bmus[2*n], bmus[2*n+1]);
                         } else if (mapType == "toroid") {
                             dist = euclideanDistanceOnToroidMap(som_x, som_y, bmus[2*n], bmus[2*n+1], nSomX, nSomY);
                         }
-                        float neighbor_fuct = getWeight(dist, radius, scale);
+                        FLOAT_T neighbor_fuct = getWeight(dist, radius, scale);
+                        localDenominator[som_y*nSomX + som_x] += neighbor_fuct;
+                         
+                        CUBLAS_CHECK( cublasSaxpy(handle,  nDimensions, &neighbor_fuct, thrust::raw_pointer_cast(&deviceData[0])+ n*nDimensions,1, d_y, 1) );                       
+                    }
+                }
+                
+                CUBLAS_CHECK( cublasGetVector(nDimensions, sizeof(FLOAT_T), d_y, 1, h_y, 1)  );
+                std::copy( h_y, h_y+ nDimensions, localNumerator + som_y*nSomX*nDimensions + som_x*nDimensions);
+                delete [] h_y;
+                CUDA_CHECK( cudaFree(d_y) );
+             } //loop over som_x
+          } //gpu threads
+          else { 
+            //use CPU
+            for (unsigned int som_x = 0; som_x < nSomX; som_x++) {
+                for (unsigned int n = 0; n < nVectorsPerRank; n++) {
+                   if (itask*nVectorsPerRank+n<nVectors) {
+                        FLOAT_T dist = 0.0f;
+                        if (mapType == "planar") {
+                            dist = euclideanDistanceOnPlanarMap(som_x, som_y, bmus[2*n], bmus[2*n+1]);
+                        } else if (mapType == "toroid") {
+                            dist = euclideanDistanceOnToroidMap(som_x, som_y, bmus[2*n], bmus[2*n+1], nSomX, nSomY);
+                        }
+                        FLOAT_T neighbor_fuct = getWeight(dist, radius, scale);
+                      
                         for (unsigned int d = 0; d < nDimensions; d++) {
                             localNumerator[som_y*nSomX*nDimensions + som_x*nDimensions + d] +=
                                 1.0f * neighbor_fuct
                                 * (*(data + n*nDimensions + d));
                         }
                         localDenominator[som_y*nSomX + som_x] += neighbor_fuct;
-                    }
-                }
-            }
-        }
-    }
+                   }
+                }       
+            } //loop over som_x
+          } //cpu threads
+        } //loop over som_y
+    } //pragma parallel
+    
 #ifdef HAVE_MPI         
     MPI_Reduce(localNumerator, numerator,
                nSomY*nSomX*nDimensions, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);

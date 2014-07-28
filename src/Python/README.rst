@@ -18,7 +18,7 @@ Example, in which the data file rgbs.txt can be found at https://github.com/pete
 
     data = np.loadtxt('rgbs.txt')
     print(data)
-    data = np.float32(data)
+    data = np.FLOAT_T32(data)
     nSomX = 50
     nSomY = 50
     nVectors = data.shape[0]
@@ -36,11 +36,11 @@ Example, in which the data file rgbs.txt can be found at https://github.com/pete
     snapshots = 0
     initialCodebookFilename = ''
     codebook_size = nSomY * nSomX * nDimensions
-    codebook = np.zeros(codebook_size, dtype=np.float32)
+    codebook = np.zeros(codebook_size, dtype=np.FLOAT_T32)
     globalBmus_size = int(nVectors * int(np.ceil(nVectors/nVectors))*2)
     globalBmus = np.zeros(globalBmus_size, dtype=np.intc)
     uMatrix_size = nSomX * nSomY
-    uMatrix = np.zeros(uMatrix_size, dtype=np.float32)
+    uMatrix = np.zeros(uMatrix_size, dtype=np.FLOAT_T32)
     somoclu.trainWrapper(data1D, nEpoch, nSomX, nSomY,
                          nDimensions, nVectors,
                          radius0, radiusN,

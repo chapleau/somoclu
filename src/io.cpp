@@ -35,7 +35,7 @@ using namespace std;
  * @param nSomY - dimensions of SOM map in the y direction
  * @param nDimensions - dimensions of a data instance
  */
-int saveCodebook(string cbFilename, float *codebook, unsigned int nSomX, unsigned int nSomY, unsigned int nDimensions)
+int saveCodebook(string cbFilename, FLOAT_T *codebook, unsigned int nSomX, unsigned int nSomY, unsigned int nDimensions)
 {
     FILE* file = fopen(cbFilename.c_str(), "wt");
     cout << "    Saving Codebook " << cbFilename << endl;
@@ -91,7 +91,7 @@ int saveBmus(string filename, int *bmus, unsigned int nSomX, unsigned int nSomY,
  * @param nDimensions - dimensions of a data instance
  */
 
-int saveUMatrix(string fname, float *uMatrix, unsigned int nSomX,
+int saveUMatrix(string fname, FLOAT_T *uMatrix, unsigned int nSomX,
              unsigned int nSomY)
 {
 
@@ -119,7 +119,7 @@ void getMatrixDimensions(string inFilename, unsigned int &nRows, unsigned int &n
     file.open(inFilename.c_str());
     if (file.is_open()) {
         string line;
-        float tmp;
+        FLOAT_T tmp;
         while(getline(file,line)) {
             if (line.substr(0,1) == "#") {
                 continue;
@@ -213,9 +213,9 @@ unsigned int *readWtsHeader(string inFilename, unsigned int &nRows, unsigned int
  * @param nColumns - returns the number of columns
  * @return the matrix
  */
-float *readMatrix(string inFilename, unsigned int &nRows, unsigned int &nColumns)
+FLOAT_T *readMatrix(string inFilename, unsigned int &nRows, unsigned int &nColumns)
 {
-    float *data = NULL;
+    FLOAT_T *data = NULL;
     unsigned int *columnMap = NULL;
     if (inFilename.compare(inFilename.size()-3, 3, "lrn") == 0) {
         columnMap = readLrnHeader(inFilename, nRows, nColumns);
@@ -231,7 +231,7 @@ float *readMatrix(string inFilename, unsigned int &nRows, unsigned int &nColumns
     ifstream file;
     file.open(inFilename.c_str());
     string line;
-    float tmp;
+    FLOAT_T tmp;
     unsigned int j = 0;
     unsigned int currentColumn = 0;
 
@@ -240,7 +240,7 @@ float *readMatrix(string inFilename, unsigned int &nRows, unsigned int &nColumns
             continue;
         }
         if (data == NULL) {
-            data = new float[nRows*nColumns];
+            data = new FLOAT_T[nRows*nColumns];
         }
         std::istringstream iss(line);
         currentColumn = 0;

@@ -2,13 +2,13 @@
 #include<cmath>
 #include<stdlib.h>
 
-float linearCooling(float start, float end, float nEpoch, float epoch) {
-  float diff = (start - end) / (nEpoch-1);
+FLOAT_T linearCooling(FLOAT_T start, FLOAT_T end, FLOAT_T nEpoch, FLOAT_T epoch) {
+  FLOAT_T diff = (start - end) / (nEpoch-1);
   return start - (epoch * diff);
 }
 
-float exponentialCooling(float start, float end, float nEpoch, float epoch) {
-  float diff = 0;
+FLOAT_T exponentialCooling(FLOAT_T start, FLOAT_T end, FLOAT_T nEpoch, FLOAT_T epoch) {
+  FLOAT_T diff = 0;
   if (end == 0.0)
   {
       diff = -log(0.1) / nEpoch;
@@ -29,7 +29,7 @@ float exponentialCooling(float start, float end, float nEpoch, float epoch) {
  * @param nDimensions - dimensions of a data instance
  */
 
-void initializeCodebook(unsigned int seed, float *codebook, unsigned int nSomX,
+void initializeCodebook(unsigned int seed, FLOAT_T *codebook, unsigned int nSomX,
                         unsigned int nSomY, unsigned int nDimensions)
 {
     ///
@@ -41,13 +41,13 @@ void initializeCodebook(unsigned int seed, float *codebook, unsigned int nSomX,
             for (unsigned int d = 0; d < nDimensions; d++) {
                 int w = 0xFFF & rand();
                 //w -= 0x800; //non-zero values
-                codebook[som_y*nSomX*nDimensions+som_x*nDimensions+d] = (float)w / 4096.0f;
+                codebook[som_y*nSomX*nDimensions+som_x*nDimensions+d] = (FLOAT_T)w / 4096.0f;
             }
         }
     }
 }
 
-core_data trainOneEpoch(int itask, float *data, svm_node **sparseData,
+core_data trainOneEpoch(int itask, FLOAT_T *data, svm_node **sparseData,
            core_data coreData, unsigned int nEpoch, unsigned int currentEpoch,
            bool enableCalculatingUMatrix,
            unsigned int nSomX, unsigned int nSomY,
@@ -55,18 +55,18 @@ core_data trainOneEpoch(int itask, float *data, svm_node **sparseData,
            unsigned int nVectorsPerRank,
            unsigned int radius0, unsigned int radiusN,
            string radiusCooling,
-           float scale0, float scaleN,
+           FLOAT_T scale0, FLOAT_T scaleN,
            string scaleCooling,
            unsigned int kernelType, string mapType){
 
-    float N = (float)nEpoch;
-    float *numerator;
-    float *denominator;
-    float scale = scale0;
-    float radius = radius0;
+    FLOAT_T N = (FLOAT_T)nEpoch;
+    FLOAT_T *numerator;
+    FLOAT_T *denominator;
+    FLOAT_T scale = scale0;
+    FLOAT_T radius = radius0;
     if (itask == 0) {
-        numerator = new float[nSomY*nSomX*nDimensions];
-        denominator = new float[nSomY*nSomX];
+        numerator = new FLOAT_T[nSomY*nSomX*nDimensions];
+        denominator = new FLOAT_T[nSomY*nSomX];
         for (unsigned int som_y = 0; som_y < nSomY; som_y++) {
             for (unsigned int som_x = 0; som_x < nSomX; som_x++) {
                 denominator[som_y*nSomX + som_x] = 0.0;
@@ -77,7 +77,7 @@ core_data trainOneEpoch(int itask, float *data, svm_node **sparseData,
         }
 
         if (radiusCooling == "linear") {
-          radius = linearCooling(float(radius0), radiusN, N, currentEpoch);
+          radius = linearCooling(FLOAT_T(radius0), radiusN, N, currentEpoch);
         } else {
           radius = exponentialCooling(radius0, radiusN, N, currentEpoch);
         }
@@ -130,9 +130,9 @@ core_data trainOneEpoch(int itask, float *data, svm_node **sparseData,
         #pragma omp parallel for
         for (unsigned int som_y = 0; som_y < nSomY; som_y++) {
             for (unsigned int som_x = 0; som_x < nSomX; som_x++) {
-                float denom = denominator[som_y*nSomX + som_x];
+                FLOAT_T denom = denominator[som_y*nSomX + som_x];
                 for (unsigned int d = 0; d < nDimensions; d++) {
-                    float newWeight = numerator[som_y*nSomX*nDimensions
+                    FLOAT_T newWeight = numerator[som_y*nSomX*nDimensions
                                                 + som_x*nDimensions + d] / denom;
                     if (newWeight > 0.0) {
                         coreData.codebook[som_y*nSomX*nDimensions+som_x*nDimensions+d] = newWeight;

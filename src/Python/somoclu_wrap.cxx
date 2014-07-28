@@ -1853,7 +1853,7 @@ SwigPyObject_TypeOnce(void) {
 #else
     0, /*nb_reserved*/
 #endif
-    (unaryfunc)0,                 /*nb_float*/
+    (unaryfunc)0,                 /*nb_FLOAT_T*/
 #if PY_VERSION_HEX < 0x03000000
     (unaryfunc)SwigPyObject_oct,  /*nb_oct*/
     (unaryfunc)SwigPyObject_hex,  /*nb_hex*/
@@ -3096,7 +3096,7 @@ namespace swig {
     if (PyCallable_Check(py_obj)) return "callable"    ;
     if (PyString_Check(  py_obj)) return "string"      ;
     if (PyInt_Check(     py_obj)) return "int"         ;
-    if (PyFloat_Check(   py_obj)) return "float"       ;
+    if (PyFloat_Check(   py_obj)) return "FLOAT_T"       ;
     if (PyDict_Check(    py_obj)) return "dict"        ;
     if (PyList_Check(    py_obj)) return "list"        ;
     if (PyTuple_Check(   py_obj)) return "tuple"       ;
@@ -3124,10 +3124,10 @@ namespace swig {
                                          "unsigned long",
                                          "long long",
                                          "unsigned long long",
-                                         "float",
+                                         "FLOAT_T",
                                          "double",
                                          "long double",
-                                         "complex float",
+                                         "complex FLOAT_T",
                                          "complex double",
                                          "complex long double",
                                          "object",
@@ -3551,7 +3551,7 @@ SWIG_AsVal_double (PyObject *obj, double *val)
 }
 
 
-#include <float.h>
+#include <FLOAT_T.h>
 
 
 #include <math.h>
@@ -3795,7 +3795,7 @@ SWIG_AsPtr_std_string (PyObject * obj, std::string **val)
 #endif
 
 
-/* Accept infinite as a valid float value unless we are unable to check if a value is finite */
+/* Accept infinite as a valid FLOAT_T value unless we are unable to check if a value is finite */
 #ifdef SWIG_isfinite
 # define SWIG_Float_Overflow_Check(X) ((X < -FLT_MAX || X > FLT_MAX) && SWIG_isfinite(X))
 #else
@@ -3804,7 +3804,7 @@ SWIG_AsPtr_std_string (PyObject * obj, std::string **val)
 
 
 SWIGINTERN int
-SWIG_AsVal_float (PyObject * obj, float *val)
+SWIG_AsVal_FLOAT_T (PyObject * obj, FLOAT_T *val)
 {
   double v;
   int res = SWIG_AsVal_double (obj, &v);
@@ -3812,7 +3812,7 @@ SWIG_AsVal_float (PyObject * obj, float *val)
     if (SWIG_Float_Overflow_Check(v)) {
       return SWIG_OverflowError;
     } else {
-      if (val) *val = static_cast< float >(v);
+      if (val) *val = static_cast< FLOAT_T >(v);
     }
   }  
   return res;
@@ -3823,7 +3823,7 @@ extern "C" {
 #endif
 SWIGINTERN PyObject *_wrap_trainWrapper(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
-  float *arg1 = (float *) 0 ;
+  FLOAT_T *arg1 = (FLOAT_T *) 0 ;
   int arg2 ;
   unsigned int arg3 ;
   unsigned int arg4 ;
@@ -3833,18 +3833,18 @@ SWIGINTERN PyObject *_wrap_trainWrapper(PyObject *SWIGUNUSEDPARM(self), PyObject
   unsigned int arg8 ;
   unsigned int arg9 ;
   std::string arg10 ;
-  float arg11 ;
-  float arg12 ;
+  FLOAT_T arg11 ;
+  FLOAT_T arg12 ;
   std::string arg13 ;
   unsigned int arg14 ;
   unsigned int arg15 ;
   std::string arg16 ;
   std::string arg17 ;
-  float *arg18 = (float *) 0 ;
+  FLOAT_T *arg18 = (FLOAT_T *) 0 ;
   int arg19 ;
   int *arg20 = (int *) 0 ;
   int arg21 ;
-  float *arg22 = (float *) 0 ;
+  FLOAT_T *arg22 = (FLOAT_T *) 0 ;
   int arg23 ;
   PyArrayObject *array1 = NULL ;
   int i1 = 1 ;
@@ -3862,9 +3862,9 @@ SWIGINTERN PyObject *_wrap_trainWrapper(PyObject *SWIGUNUSEDPARM(self), PyObject
   int ecode8 = 0 ;
   unsigned int val9 ;
   int ecode9 = 0 ;
-  float val11 ;
+  FLOAT_T val11 ;
   int ecode11 = 0 ;
-  float val12 ;
+  FLOAT_T val12 ;
   int ecode12 = 0 ;
   unsigned int val14 ;
   int ecode14 = 0 ;
@@ -3901,7 +3901,7 @@ SWIGINTERN PyObject *_wrap_trainWrapper(PyObject *SWIGUNUSEDPARM(self), PyObject
     array1 = obj_to_array_no_conversion(obj0, NPY_FLOAT);
     if (!array1 || !require_dimensions(array1,1) || !require_contiguous(array1)
       || !require_native(array1)) SWIG_fail;
-    arg1 = (float*) array_data(array1);
+    arg1 = (FLOAT_T*) array_data(array1);
     arg2 = 1;
     for (i1=0; i1 < array_numdims(array1); ++i1) arg2 *= array_size(array1,i1);
   }
@@ -3949,16 +3949,16 @@ SWIGINTERN PyObject *_wrap_trainWrapper(PyObject *SWIGUNUSEDPARM(self), PyObject
     arg10 = *ptr;
     if (SWIG_IsNewObj(res)) delete ptr;
   }
-  ecode11 = SWIG_AsVal_float(obj9, &val11);
+  ecode11 = SWIG_AsVal_FLOAT_T(obj9, &val11);
   if (!SWIG_IsOK(ecode11)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode11), "in method '" "trainWrapper" "', argument " "11"" of type '" "float""'");
+    SWIG_exception_fail(SWIG_ArgError(ecode11), "in method '" "trainWrapper" "', argument " "11"" of type '" "FLOAT_T""'");
   } 
-  arg11 = static_cast< float >(val11);
-  ecode12 = SWIG_AsVal_float(obj10, &val12);
+  arg11 = static_cast< FLOAT_T >(val11);
+  ecode12 = SWIG_AsVal_FLOAT_T(obj10, &val12);
   if (!SWIG_IsOK(ecode12)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode12), "in method '" "trainWrapper" "', argument " "12"" of type '" "float""'");
+    SWIG_exception_fail(SWIG_ArgError(ecode12), "in method '" "trainWrapper" "', argument " "12"" of type '" "FLOAT_T""'");
   } 
-  arg12 = static_cast< float >(val12);
+  arg12 = static_cast< FLOAT_T >(val12);
   {
     std::string *ptr = (std::string *)0;
     int res = SWIG_AsPtr_std_string(obj11, &ptr);
@@ -4000,7 +4000,7 @@ SWIGINTERN PyObject *_wrap_trainWrapper(PyObject *SWIGUNUSEDPARM(self), PyObject
     array18 = obj_to_array_no_conversion(obj16, NPY_FLOAT);
     if (!array18 || !require_dimensions(array18,1) || !require_contiguous(array18)
       || !require_native(array18)) SWIG_fail;
-    arg18 = (float*) array_data(array18);
+    arg18 = (FLOAT_T*) array_data(array18);
     arg19 = 1;
     for (i18=0; i18 < array_numdims(array18); ++i18) arg19 *= array_size(array18,i18);
   }
@@ -4016,7 +4016,7 @@ SWIGINTERN PyObject *_wrap_trainWrapper(PyObject *SWIGUNUSEDPARM(self), PyObject
     array22 = obj_to_array_no_conversion(obj18, NPY_FLOAT);
     if (!array22 || !require_dimensions(array22,1) || !require_contiguous(array22)
       || !require_native(array22)) SWIG_fail;
-    arg22 = (float*) array_data(array22);
+    arg22 = (FLOAT_T*) array_data(array22);
     arg23 = 1;
     for (i22=0; i22 < array_numdims(array22); ++i22) arg23 *= array_size(array22,i22);
   }

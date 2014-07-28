@@ -7,19 +7,19 @@ using namespace Rcpp;
 #include"somocluWrap.h"
 
 
-void trainWrapperR(float *data, int data_length,
+void trainWrapperR(FLOAT_T *data, int data_length,
                   unsigned int nEpoch,
                   unsigned int nSomX, unsigned int nSomY,
                   unsigned int nDimensions, unsigned int nVectors,
                   unsigned int radius0, unsigned int radiusN,
                   string radiusCooling,
-                  float scale0, float scaleN,
+                  FLOAT_T scale0, FLOAT_T scaleN,
                   string scaleCooling, unsigned int snapshots,
                   unsigned int kernelType, string mapType,
 //                  string initialCodebookFilename,
-                  float *codebook, int codebook_size,
+                  FLOAT_T *codebook, int codebook_size,
                   int *globalBmus, int globalBmus_size,
-                  float *uMatrix, int uMatrix_size)
+                  FLOAT_T *uMatrix, int uMatrix_size)
 {
   ///
   /// Codebook
@@ -29,7 +29,7 @@ void trainWrapperR(float *data, int data_length,
   svm_node ** sparseData = NULL;
   core_data coreData;
   coreData.codebook_size = nSomY*nSomX*nDimensions;
-  coreData.codebook = new float[coreData.codebook_size];
+  coreData.codebook = new FLOAT_T[coreData.codebook_size];
   coreData.globalBmus = NULL;
   coreData.uMatrix = NULL;
   unsigned int nVectorsPerRank = nVectors;
@@ -95,7 +95,7 @@ void trainWrapperR(float *data, int data_length,
   }
 #endif
   if(coreData.codebook != NULL){
-      memcpy(codebook, coreData.codebook, sizeof(float) *  codebook_size);
+      memcpy(codebook, coreData.codebook, sizeof(FLOAT_T) *  codebook_size);
       delete [] coreData.codebook;
     }
   if(coreData.globalBmus != NULL){
@@ -103,7 +103,7 @@ void trainWrapperR(float *data, int data_length,
       delete [] coreData.globalBmus;
     }
   if(coreData.uMatrix != NULL){
-      memcpy(uMatrix, coreData.uMatrix, sizeof(float) *  uMatrix_size);
+      memcpy(uMatrix, coreData.uMatrix, sizeof(FLOAT_T) *  uMatrix_size);
       delete [] coreData.uMatrix;
     }
 }
@@ -134,20 +134,20 @@ RcppExport SEXP Rtrain(SEXP data_p,
   unsigned int kernelType = (unsigned int) as<int>(kernelType_p);
   string mapType = as<string>(mapType_p);
   int data_length = nVectors * nDimensions;
-  float* data = new float[data_length];
-  // convert matrix to data c float array
+  FLOAT_T* data = new FLOAT_T[data_length];
+  // convert matrix to data c FLOAT_T array
   for(int i = 0; i < nVectors; i++){
       for(int j = 0; j < nDimensions; j++){
-          data[i * nDimensions + j] = (float) dataMatrix(i,j);
+          data[i * nDimensions + j] = (FLOAT_T) dataMatrix(i,j);
         }
     }
 
   int codebook_size =  nSomY * nSomX * nDimensions;
   int globalBmus_size = nVectors * 2;
   int uMatrix_size = nSomX * nSomY;
-  float* codebook = new float[codebook_size];
+  FLOAT_T* codebook = new FLOAT_T[codebook_size];
   int* globalBmus = new int[globalBmus_size];
-  float* uMatrix = new float[uMatrix_size];
+  FLOAT_T* uMatrix = new FLOAT_T[uMatrix_size];
     trainWrapperR(data, data_length, nEpoch, nSomX, nSomY,
                  nDimensions, nVectors, radius0, radiusN,
                  radiusCooling, scale0, scaleN, scaleCooling,

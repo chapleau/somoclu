@@ -31,11 +31,11 @@
  * @param r - row number in the input feature file
   */
 
-float get_distance(float* codebook, svm_node **sparseData,
+FLOAT_T get_distance(FLOAT_T* codebook, svm_node **sparseData,
                    unsigned int som_y, unsigned int som_x, unsigned int nSomX,
                    unsigned int nDimensions, unsigned int r)
 {
-    float distance = 0.0f;
+    FLOAT_T distance = 0.0f;
     unsigned int j=0;
     for ( unsigned int d=0; d < nDimensions; d++ ) {
         if ( (int) d == sparseData[r][j].index ) {
@@ -56,13 +56,13 @@ float get_distance(float* codebook, svm_node **sparseData,
  * @param coords - BMU coords
  * @param n - row num in the input feature file
  */
-void get_bmu_coord(float* codebook, svm_node **sparseData,
+void get_bmu_coord(FLOAT_T* codebook, svm_node **sparseData,
                    unsigned int nSomY, unsigned int nSomX,
                    unsigned int nDimensions, int* coords, int* coords2, unsigned int n)
 {
-    float mindist = 9999.99;
-    float mindist2 = 9999.99;
-    float dist = 0.0f;
+    FLOAT_T mindist = 9999.99;
+    FLOAT_T mindist2 = 9999.99;
+    FLOAT_T dist = 0.0f;
 
     /// Check nSomX * nSomY nodes one by one and compute the distance
     /// D(W_K, Fvec) and get the mindist and get the coords for the BMU.
@@ -91,12 +91,12 @@ void get_bmu_coord(float* codebook, svm_node **sparseData,
     }
 }
 
-void trainOneEpochSparseCPU(int itask, svm_node **sparseData, float *numerator,
-                            float *denominator, float *codebook,
+void trainOneEpochSparseCPU(int itask, svm_node **sparseData, FLOAT_T *numerator,
+                            FLOAT_T *denominator, FLOAT_T *codebook,
                             unsigned int nSomX, unsigned int nSomY,
                             unsigned int nDimensions, unsigned int nVectors,
-                            unsigned int nVectorsPerRank, float radius,
-                            float scale, string mapType, int *globalBmus, int *global2ndBmus)
+                            unsigned int nVectorsPerRank, FLOAT_T radius,
+                            FLOAT_T scale, string mapType, int *globalBmus, int *global2ndBmus)
 {
     int p1[2] = {0, 0};
     int *bmus = new int[nVectorsPerRank*2];
@@ -122,8 +122,8 @@ void trainOneEpochSparseCPU(int itask, svm_node **sparseData, float *numerator,
         }
     }
 
-    float *localNumerator = new float[nSomY*nSomX*nDimensions];
-    float *localDenominator = new float[nSomY*nSomX];
+    FLOAT_T *localNumerator = new FLOAT_T[nSomY*nSomX*nDimensions];
+    FLOAT_T *localDenominator = new FLOAT_T[nSomY*nSomX];
 #ifdef _OPENMP
     #pragma omp parallel default(shared)
 #endif
@@ -147,13 +147,13 @@ void trainOneEpochSparseCPU(int itask, svm_node **sparseData, float *numerator,
             for (unsigned int som_x = 0; som_x < nSomX; som_x++) {
                 for (unsigned int n = 0; n < nVectorsPerRank; n++) {
                     if (itask*nVectorsPerRank+n<nVectors) {
-                        float dist = 0.0f;
+                        FLOAT_T dist = 0.0f;
                         if (mapType == "planar") {
                             dist = euclideanDistanceOnPlanarMap(som_x, som_y, bmus[2*n], bmus[2*n+1]);
                         } else if (mapType == "toroid") {
                             dist = euclideanDistanceOnToroidMap(som_x, som_y, bmus[2*n], bmus[2*n+1], nSomX, nSomY);
                         }
-                        float neighbor_fuct = getWeight(dist, radius, scale);
+                        FLOAT_T neighbor_fuct = getWeight(dist, radius, scale);
                         unsigned int j=0;
                         while ( sparseData[n][j].index!=-1 ) {
                             localNumerator[som_y*nSomX*nDimensions +

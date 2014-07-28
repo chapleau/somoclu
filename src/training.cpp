@@ -35,7 +35,7 @@ using namespace std;
  * @param nDimensions - dimensions of a data instance
  */
 
-//void initializeCodebook(unsigned int seed, float *codebook, unsigned int nSomX,
+//void initializeCodebook(unsigned int seed, FLOAT_T *codebook, unsigned int nSomX,
 //                        unsigned int nSomY, unsigned int nDimensions)
 //{
 //    ///
@@ -47,7 +47,7 @@ using namespace std;
 //            for (unsigned int d = 0; d < nDimensions; d++) {
 //                int w = 0xFFF & rand();
 //                w -= 0x800;
-//                codebook[som_y*nSomX*nDimensions+som_x*nDimensions+d] = (float)w / 4096.0f;
+//                codebook[som_y*nSomX*nDimensions+som_x*nDimensions+d] = (FLOAT_T)w / 4096.0f;
 //            }
 //        }
 //    }
@@ -60,13 +60,13 @@ using namespace std;
  * @param ptr
  */
 
-void train(int itask, float *data, svm_node **sparseData,
+void train(int itask, FLOAT_T *data, svm_node **sparseData,
            unsigned int nSomX, unsigned int nSomY,
            unsigned int nDimensions, unsigned int nVectors,
            unsigned int nVectorsPerRank, unsigned int nEpoch,
            unsigned int radius0, unsigned int radiusN, 
            string radiusCooling,
-           float scale0, float scaleN,
+           FLOAT_T scale0, FLOAT_T scaleN,
            string scaleCooling,
            string outPrefix, unsigned int snapshots,
            unsigned int kernelType, string mapType,
@@ -76,7 +76,7 @@ void train(int itask, float *data, svm_node **sparseData,
     /// Codebook
     ///
     core_data coreData;
-    coreData.codebook = new float[nSomY*nSomX*nDimensions];
+    coreData.codebook = new FLOAT_T[nSomY*nSomX*nDimensions];
     coreData.globalBmus = NULL;
     coreData.global2ndBmus = NULL;
     coreData.uMatrix = NULL;    
@@ -84,7 +84,7 @@ void train(int itask, float *data, svm_node **sparseData,
         coreData.globalBmus = new int[nVectorsPerRank*int(ceil(nVectors/(double)nVectorsPerRank))*2];
         coreData.global2ndBmus = new int[nVectorsPerRank*int(ceil(nVectors/(double)nVectorsPerRank))*2];
         if (initialCodebookFilename.empty()){
-            initializeCodebook(0, coreData.codebook, nSomX, nSomY, nDimensions);
+            initializeCodebook(123, coreData.codebook, nSomX, nSomY, nDimensions);
         } else {
             unsigned int nSomXY = 0;
             unsigned int tmpNDimensions = 0;
@@ -155,7 +155,7 @@ void train(int itask, float *data, svm_node **sparseData,
 
        if ( (currentEpoch != nEpoch) && (currentEpoch % (nEpoch/100+1) != 0) ){}
        else{
-              float ratio  =  currentEpoch/(float)nEpoch;
+              FLOAT_T ratio  =  currentEpoch/(FLOAT_T)nEpoch;
               int   c      =  ratio * 50 + 1;
               cerr << std::setw(7) << (int)(ratio*100) << "% [";
               for (int x=0; x<c; x++) cout << "=";
@@ -169,7 +169,7 @@ void train(int itask, float *data, svm_node **sparseData,
             cerr << "Epoch Time: " << epoch_time << endl;
             if ( (currentEpoch != nEpoch) && (currentEpoch % (nEpoch/100+1) != 0) ){}
             else{
-              float ratio  =  currentEpoch/(float)nEpoch;
+              FLOAT_T ratio  =  currentEpoch/(FLOAT_T)nEpoch;
               int   c      =  ratio * 50 + 1;
               cout << std::setw(7) << (int)(ratio*100) << "% [";
               for (int x=0; x<c; x++) cout << "=";

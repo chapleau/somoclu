@@ -19,12 +19,12 @@ mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
   int data_length = nVectors * nDimensions;
   //    mexPrintf("\n%d\n", nVectors);
   //    mexPrintf("\n%d\n", nDimensions);
-  float* data = new float[data_length];
+  FLOAT_T* data = new FLOAT_T[data_length];
   double * pData = mxGetPr(prhs[0]);
 
   for(int i = 0; i < nVectors; i++){
       for(int j = 0; j < nDimensions; j++){
-          data[i * nDimensions + j] = (float) pData[j * nVectors + i];
+          data[i * nDimensions + j] = (FLOAT_T) pData[j * nVectors + i];
           //mexPrintf("%f\n",data[i * nDimensions + j] );
         }
     }
@@ -75,9 +75,9 @@ mexFunction(int nlhs,mxArray *plhs[],int nrhs,const mxArray *prhs[])
   int codebook_size =  nSomY * nSomX * nDimensions;
   int globalBmus_size = nVectors * 2;
   int uMatrix_size = nSomX * nSomY;
-  float* codebook = new float[codebook_size];
+  FLOAT_T* codebook = new FLOAT_T[codebook_size];
   int* globalBmus = new int[globalBmus_size];
-  float* uMatrix = new float[uMatrix_size];
+  FLOAT_T* uMatrix = new FLOAT_T[uMatrix_size];
   //Call train routine
   trainWrapper(data, data_length, nEpoch, nSomX, nSomY,
                nDimensions, nVectors, radius0, radiusN,

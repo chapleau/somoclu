@@ -12,10 +12,10 @@
  * @return the weight vector
  */
 
-float* get_wvec(float *codebook, unsigned int som_y, unsigned int som_x,
+FLOAT_T* get_wvec(FLOAT_T *codebook, unsigned int som_y, unsigned int som_x,
                 unsigned int nSomX, unsigned int nDimensions)
 {
-    float* wvec = new float[nDimensions];
+    FLOAT_T* wvec = new FLOAT_T[nDimensions];
     for (unsigned int d = 0; d < nDimensions; d++)
         wvec[d] = codebook[som_y*nSomX*nDimensions+som_x*nDimensions+d]; /// CAUTION: (y,x) order
     return wvec;
@@ -28,11 +28,11 @@ float* get_wvec(float *codebook, unsigned int som_y, unsigned int som_x,
  * @return distance
  */
 
-float get_distance(const float* vec1, const float* vec2,
+FLOAT_T get_distance(const FLOAT_T* vec1, const FLOAT_T* vec2,
                    unsigned int nDimensions) {
-    float distance = 0.0f;
-    float x1 = 0.0f;
-    float x2 = 0.0f;
+    FLOAT_T distance = 0.0f;
+    FLOAT_T x1 = 0.0f;
+    FLOAT_T x2 = 0.0f;
     for (unsigned int d = 0; d < nDimensions; d++) {
         x1 = std::min(vec1[d], vec2[d]);
         x2 = std::max(vec1[d], vec2[d]);
@@ -49,33 +49,33 @@ float get_distance(const float* vec1, const float* vec2,
  * @param nDimensions - dimensions of a data instance
  */
 
-float *calculateUMatrix(float *codebook, unsigned int nSomX,
+FLOAT_T *calculateUMatrix(FLOAT_T *codebook, unsigned int nSomX,
              unsigned int nSomY, unsigned int nDimensions, string mapType)
 {
-    float *uMatrix = new float[nSomX*nSomY];
-    //float min_dist = 1.5f;
+    FLOAT_T *uMatrix = new FLOAT_T[nSomX*nSomY];
+    //FLOAT_T min_dist = 1.5f;
     for (unsigned int som_y1 = 0; som_y1 < nSomY; som_y1++) {
         for (unsigned int som_x1 = 0; som_x1 < nSomX; som_x1++) {
-            float dist = 0.0f;
+            FLOAT_T dist = 0.0f;
             unsigned int nodes_number = 0;
-            float* vec1 = get_wvec(codebook, som_y1, som_x1, nSomX, nDimensions);
+            FLOAT_T* vec1 = get_wvec(codebook, som_y1, som_x1, nSomX, nDimensions);
 
             if (mapType == "planar") {
                 if ( som_x1 > 0 ) {
-                    float* vec2 = get_wvec(codebook, som_y1, som_x1-1, nSomX, nDimensions);
+                    FLOAT_T* vec2 = get_wvec(codebook, som_y1, som_x1-1, nSomX, nDimensions);
                     dist += get_distance(vec1, vec2, nDimensions);
                     delete [] vec2;
                     nodes_number++;
 
                     if ( som_y1 > 0) {
-                       float* vec2 = get_wvec(codebook, som_y1-1, som_x1-1, nSomX, nDimensions);
+                       FLOAT_T* vec2 = get_wvec(codebook, som_y1-1, som_x1-1, nSomX, nDimensions);
                        dist += get_distance(vec1, vec2, nDimensions);
                        delete [] vec2;
                        nodes_number++;
                     }
 
                     if ( som_y1 < nSomY-1) {
-                       float* vec2 = get_wvec(codebook, som_y1+1, som_x1-1, nSomX, nDimensions);
+                       FLOAT_T* vec2 = get_wvec(codebook, som_y1+1, som_x1-1, nSomX, nDimensions);
                        dist += get_distance(vec1, vec2, nDimensions);
                        delete [] vec2;
                        nodes_number++;
@@ -84,34 +84,34 @@ float *calculateUMatrix(float *codebook, unsigned int nSomX,
                 } //x1>0
 
                 if ( som_y1 > 0 ) {
-                   float* vec2 = get_wvec(codebook, som_y1-1, som_x1, nSomX, nDimensions);
+                   FLOAT_T* vec2 = get_wvec(codebook, som_y1-1, som_x1, nSomX, nDimensions);
                    dist += get_distance(vec1, vec2, nDimensions);
                    delete [] vec2;
                    nodes_number++;  
                 }  
 
                 if ( som_y1 < nSomY-1 ) {
-                   float* vec2 = get_wvec(codebook, som_y1+1, som_x1, nSomX, nDimensions);
+                   FLOAT_T* vec2 = get_wvec(codebook, som_y1+1, som_x1, nSomX, nDimensions);
                    dist += get_distance(vec1, vec2, nDimensions);
                    delete [] vec2;
                    nodes_number++;  
                 }  
 
                 if ( som_x1 < nSomX-1 ) {
-                    float* vec2 = get_wvec(codebook, som_y1, som_x1+1, nSomX, nDimensions);
+                    FLOAT_T* vec2 = get_wvec(codebook, som_y1, som_x1+1, nSomX, nDimensions);
                     dist += get_distance(vec1, vec2, nDimensions);
                     delete [] vec2;
                     nodes_number++;
 
                     if ( som_y1 > 0) {
-                       float* vec2 = get_wvec(codebook, som_y1-1, som_x1+1, nSomX, nDimensions);
+                       FLOAT_T* vec2 = get_wvec(codebook, som_y1-1, som_x1+1, nSomX, nDimensions);
                        dist += get_distance(vec1, vec2, nDimensions);
                        delete [] vec2;
                        nodes_number++;
                     }
 
                     if ( som_y1 < nSomY-1) {
-                       float* vec2 = get_wvec(codebook, som_y1+1, som_x1+1, nSomX, nDimensions);
+                       FLOAT_T* vec2 = get_wvec(codebook, som_y1+1, som_x1+1, nSomX, nDimensions);
                        dist += get_distance(vec1, vec2, nDimensions);
                        delete [] vec2;
                        nodes_number++;
@@ -124,7 +124,7 @@ float *calculateUMatrix(float *codebook, unsigned int nSomX,
                        
                  nodes_number=8; 
 
-                 float* vec2 = get_wvec(codebook, som_y1, (som_x1-1+nSomX)%nSomX, nSomX, nDimensions);
+                 FLOAT_T* vec2 = get_wvec(codebook, som_y1, (som_x1-1+nSomX)%nSomX, nSomX, nDimensions);
                  dist += get_distance(vec1, vec2, nDimensions);
                  delete [] vec2;
 
@@ -158,7 +158,7 @@ float *calculateUMatrix(float *codebook, unsigned int nSomX,
             }
 
             delete [] vec1;
-            dist /= (float)nodes_number;
+            dist /= (FLOAT_T)nodes_number;
             uMatrix[som_y1*nSomX+som_x1] = dist;
             
             /*
@@ -166,7 +166,7 @@ float *calculateUMatrix(float *codebook, unsigned int nSomX,
                 for (unsigned int som_x2 = 0; som_x2 < nSomX; som_x2++) {
 
                     if (som_x1 == som_x2 && som_y1 == som_y2) continue;
-                    float tmp = 0.0f;
+                    FLOAT_T tmp = 0.0f;
                     if (mapType == "planar") {
                         tmp = euclideanDistanceOnPlanarMap(som_x1, som_y1, som_x2, som_y2);
                     } else if (mapType == "toroid") {
@@ -174,15 +174,15 @@ float *calculateUMatrix(float *codebook, unsigned int nSomX,
                     }
                     if (tmp <= min_dist) {
                         nodes_number++;
-                        float* vec1 = get_wvec(codebook, som_y1, som_x1, nSomX, nDimensions);
-                        float* vec2 = get_wvec(codebook, som_y2, som_x2, nSomX, nDimensions);
+                        FLOAT_T* vec1 = get_wvec(codebook, som_y1, som_x1, nSomX, nDimensions);
+                        FLOAT_T* vec2 = get_wvec(codebook, som_y2, som_x2, nSomX, nDimensions);
                         dist += get_distance(vec1, vec2, nDimensions);
                         delete [] vec1;
                         delete [] vec2;
                     }
                 }
             }
-            dist /= (float)nodes_number;
+            dist /= (FLOAT_T)nodes_number;
             uMatrix[som_y1*nSomX+som_x1] = dist;
             */
         }

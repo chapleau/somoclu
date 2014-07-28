@@ -42,7 +42,7 @@ void processCommandLine(int argc, char** argv, string *inFilename,
                         string* outPrefix, unsigned int *nEpoch,
                         unsigned int *radius0, unsigned int *radiusN,
                         string *radiusCooling,
-                        float *scale0, float *scaleN,
+                        FLOAT_T *scale0, FLOAT_T *scaleN,
                         string *scaleCooling,
                         unsigned int *nSomX, unsigned int *nSomY,
                         unsigned int *kernelType, string *mapType,
@@ -73,8 +73,8 @@ int main(int argc, char** argv)
     unsigned int radius0 = 0;
     unsigned int radiusN = 0;
     string radiusCooling;
-    float scale0 = 0.0;
-    float scaleN = 0.0;
+    FLOAT_T scale0 = 0.0;
+    FLOAT_T scaleN = 0.0;
     string scaleCooling;    
     unsigned int snapshots = 0;
     string inFilename;
@@ -119,7 +119,7 @@ int main(int argc, char** argv)
     double profile_time = MPI_Wtime();
 #endif
 
-    float * dataRoot = NULL;
+    FLOAT_T * dataRoot = NULL;
     unsigned int nDimensions = 0;
     unsigned int nVectors = 0;
     if(rank == 0 ) {
@@ -137,14 +137,14 @@ int main(int argc, char** argv)
     unsigned int nVectorsPerRank = ceil(nVectors / (1.0*nProcs));
     
     // Allocate a buffer on each node
-    float* data = NULL;
+    FLOAT_T* data = NULL;
     svm_node **sparseData;
     sparseData = NULL;
 
     if (kernelType == DENSE_CPU || kernelType == DENSE_GPU) {
 #ifdef HAVE_MPI         
         // Dispatch a portion of the input data to each node
-        data = new float[nVectorsPerRank*nDimensions];        
+        data = new FLOAT_T[nVectorsPerRank*nDimensions];        
         MPI_Scatter(dataRoot, nVectorsPerRank*nDimensions, MPI_FLOAT,
                     data, nVectorsPerRank*nDimensions, MPI_FLOAT,
                     0, MPI_COMM_WORLD);
@@ -250,7 +250,7 @@ void processCommandLine(int argc, char** argv, string *inFilename,
                         string* outPrefix, unsigned int *nEpoch,
                         unsigned int *radius0, unsigned int *radiusN,
                         string *radiusCooling,
-                        float *scale0, float *scaleN,
+                        FLOAT_T *scale0, FLOAT_T *scaleN,
                         string *scaleCooling,
                         unsigned int *nSomX, unsigned int *nSomY,
                         unsigned int *kernelType, string *mapType,
@@ -333,14 +333,14 @@ void processCommandLine(int argc, char** argv, string *inFilename,
         case 'l':
             *scale0 = atof(optarg);
             if (*scale0<=0) {
-                cerr << "The argument of option -l should be a positive float.\n";
+                cerr << "The argument of option -l should be a positive FLOAT_T.\n";
                 my_abort(1);
             }
             break;
         case 'L':
             *scaleN = atof(optarg);
             if (*scaleN<=0) {
-                cerr << "The argument of option -L should be a positive float.\n";
+                cerr << "The argument of option -L should be a positive FLOAT_T.\n";
                 my_abort(1);
             }
             break;
