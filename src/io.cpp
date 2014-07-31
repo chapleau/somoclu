@@ -26,6 +26,9 @@
 
 #include "somoclu.h"
 
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
+
 using namespace std;
 
 /** Save a SOM codebook
@@ -113,26 +116,43 @@ int saveUMatrix(string fname, FLOAT_T *uMatrix, unsigned int nSomX,
         return -2;
 }
 
+void process_line_mat_dim(const std::string& line, unsigned int &nRows, unsigned int &nColumns) {
+
+  FLOAT_T tmp;
+  if (line.substr(0,1) == "#") return;
+  std::istringstream iss(line);
+  if (nRows == 0) {
+     while (iss >> tmp) nColumns++;
+  }
+  nRows++;
+
+}
+
 void getMatrixDimensions(string inFilename, unsigned int &nRows, unsigned int &nColumns) 
 {
     ifstream file;
-    file.open(inFilename.c_str());
+    bool gzipped = inFilename.compare(inFilename.size()-2, 2, "gz") == 0;
+    if (gzipped) file.open(inFilename.c_str(), std::ios_base::in | std::ios_base::binary);
+    else file.open(inFilename.c_str());
+
     if (file.is_open()) {
-        string line;
-        FLOAT_T tmp;
-        while(getline(file,line)) {
-            if (line.substr(0,1) == "#") {
-                continue;
-            }
-            std::istringstream iss(line);
-            if (nRows == 0) {
-                while (iss >> tmp) {
-                    nColumns++;
-                }
-            }
-            nRows++;
+      string line;
+      if (gzipped) {
+        try {
+          boost::iostreams::filtering_istream in;
+          in.push(boost::iostreams::gzip_decompressor());
+          in.push(file);
+          while(getline(in,line)) process_line_mat_dim(line, nRows, nColumns); 
         }
-        file.close();
+        catch(const boost::iostreams::gzip_error& e) {
+          std::cerr << e.what() << '\n';
+          my_abort(-1);
+        }
+      }
+      else {
+        while(getline(file,line)) process_line_mat_dim(line, nRows, nColumns);
+      }         
+      file.close();
     } else {
         std::cerr << "Input file could not be opened!\n";
         my_abort(-1);
@@ -207,6 +227,24 @@ unsigned int *readWtsHeader(string inFilename, unsigned int &nRows, unsigned int
     return columnMap;
 }
 
+
+void process_line_mat(const std::string& line, FLOAT_T *& data, unsigned int *& columnMap, unsigned int& j, unsigned int& currentColumn, unsigned int &nRows, unsigned int &nColumns) {
+
+  FLOAT_T tmp;
+
+  if ( (line.substr(0,1) == "#") | (line.substr(0,1) == "%") ) return;
+        
+  if (data == NULL) data = new FLOAT_T[nRows*nColumns];
+        
+  std::istringstream iss(line);
+  currentColumn = 0;
+  while (iss >> tmp) {
+     if (columnMap[currentColumn++] != 1) continue;
+     data[j++] = tmp;
+  }
+
+}
+
 /** Reads a matrix
  * @param inFilename
  * @param nRows - returns the number of rows
@@ -228,29 +266,32 @@ FLOAT_T *readMatrix(string inFilename, unsigned int &nRows, unsigned int &nColum
             columnMap[i] = 1;
         }
     }
+
     ifstream file;
-    file.open(inFilename.c_str());
+    bool gzipped = inFilename.compare(inFilename.size()-2, 2, "gz") == 0;
+    if (gzipped) file.open(inFilename.c_str(), std::ios_base::in | std::ios_base::binary);
+    else file.open(inFilename.c_str());
+
     string line;
-    FLOAT_T tmp;
     unsigned int j = 0;
     unsigned int currentColumn = 0;
 
-    while(getline(file,line)) {
-        if ( (line.substr(0,1) == "#") | (line.substr(0,1) == "%") ) {
-            continue;
+    if (gzipped) {
+        try {
+          boost::iostreams::filtering_istream in;
+          in.push(boost::iostreams::gzip_decompressor());
+          in.push(file);
+          while(getline(in,line)) process_line_mat(line, data, columnMap, j, currentColumn, nRows, nColumns);
         }
-        if (data == NULL) {
-            data = new FLOAT_T[nRows*nColumns];
-        }
-        std::istringstream iss(line);
-        currentColumn = 0;
-        while (iss >> tmp) {
-            if (columnMap[currentColumn++] != 1) {
-                continue;
-            }
-            data[j++] = tmp;
+        catch(const boost::iostreams::gzip_error& e) {
+          std::cerr << e.what() << '\n';
+          my_abort(-1);
         }
     }
+    else {
+      while(getline(file,line)) process_line_mat(line, data, columnMap, j, currentColumn, nRows, nColumns);
+    }    
+    
     file.close();
     delete [] columnMap;
     return data;

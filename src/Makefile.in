@@ -35,6 +35,8 @@ VPATH	  = @srcdir@
 
 LIBOBJS=sparseCpuKernels.o io.o denseCpuKernels.o mapDistanceFunctions.o training.o uMatrix.o trainOneEpoch.o
 
+LIBS+=-lboost_iostreams -lz
+
 ifdef CUDA_LIBS
 	LIBOBJS+=denseGpuKernels.cu.co
 endif
