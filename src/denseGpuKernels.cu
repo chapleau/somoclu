@@ -55,6 +55,8 @@ thrust::device_vector<FLOAT_T> deviceDataNorms;
 thrust::device_vector<FLOAT_T> deviceCodebook;
 thrust::device_vector<FLOAT_T> deviceCodebookNorms;
 
+FLOAT_T * d_ptr = 0;
+thrust::device_ptr<FLOAT_T> deviceDataPtr;
 
 // convert a linear index to a row index
 template <typename T>
@@ -99,7 +101,7 @@ struct argMin : public thrust::binary_function<argMinType,argMinType,argMinType>
 };
 
 template <typename T>
-thrust::device_vector<T> normsOfRowSpace(thrust::device_vector<T> A, int nRows, int nColumns) {
+thrust::device_vector<T> normsOfRowSpace(thrust::device_ptr<T> A, int nRows, int nColumns) {
     // allocate storage for row sums and indices
     thrust::device_vector<T> row_sums(nRows);
     thrust::device_vector<int> row_indices(nRows);
@@ -108,7 +110,7 @@ thrust::device_vector<T> normsOfRowSpace(thrust::device_vector<T> A, int nRows, 
     thrust::reduce_by_key
     (thrust::make_transform_iterator(thrust::counting_iterator<int>(0), linear_index_to_row_index<int>(nColumns)),
      thrust::make_transform_iterator(thrust::counting_iterator<int>(0), linear_index_to_row_index<int>(nColumns)) + (nRows*nColumns),
-     thrust::make_transform_iterator(A.begin(), square<T>()),
+     thrust::make_transform_iterator(A, square<T>()),
      row_indices.begin(),
      row_sums.begin(),
      thrust::equal_to<int>(),
@@ -178,7 +180,13 @@ void freeGpu()
         cerr << "!!!! shutdown error (A)\n";
         my_abort(-1);
     }
-
+    
+    CUDA_CHECK( cudaFree(d_ptr) )
+    std::cout<<"successfully de-allocated memory on GPU"<<std::endl;
+    size_t mem_tot;
+    size_t mem_free;
+    cudaMemGetInfo(&mem_free, &mem_tot);
+    std::cout << "Free memory : " << float(mem_free)/1024./1024.<< " mb ("<< float(mem_free)*100./mem_tot <<"%)"<< std::endl;
 }
 
 /** Find the best matching units -- called from the map function
@@ -193,7 +201,7 @@ void freeGpu()
 void getBmusOnGpu(int *bmus, FLOAT_T *codebook, int nSomX, int nSomY, int nDimensions, int nVectorsPerRank)
 {
     deviceCodebook = thrust::device_vector<FLOAT_T>(codebook, codebook+nSomX*nSomY*nDimensions);
-    deviceCodebookNorms = normsOfRowSpace<FLOAT_T>(deviceCodebook, nSomX*nSomY, nDimensions);
+    deviceCodebookNorms = normsOfRowSpace<FLOAT_T>(thrust::device_pointer_cast(thrust::raw_pointer_cast(&deviceCodebook[0])), nSomX*nSomY, nDimensions);
     thrust::device_vector<FLOAT_T> deviceGramMatrix(nSomX*nSomY*nVectorsPerRank, 0);
 
     //Calculate the inner products of the data vectors and the weight vectors
@@ -204,7 +212,7 @@ void getBmusOnGpu(int *bmus, FLOAT_T *codebook, int nSomX, int nSomY, int nDimen
     cublasStatus_t status = cublasSgemm(handle, CUBLAS_OP_T, CUBLAS_OP_N,
                                         nSomX*nSomY, nVectorsPerRank, nDimensions,
                                         &alpha, thrust::raw_pointer_cast(&deviceCodebook[0]), nDimensions,
-                                        thrust::raw_pointer_cast(&deviceData[0]), nDimensions,
+                                        deviceDataPtr.get(), nDimensions,
                                         &beta,  thrust::raw_pointer_cast(&deviceGramMatrix[0]), nSomX*nSomY);
 
     if (status != CUBLAS_STATUS_SUCCESS) {
@@ -250,12 +258,37 @@ void initializeGpu(FLOAT_T *hostData, int nVectorsPerRank, int nDimensions, int 
         cerr << "!!!! CUBLAS initialization error\n";
         my_abort(-1);
     }
-    deviceData = thrust::device_vector<FLOAT_T>(hostData, hostData+nVectorsPerRank*nDimensions);
-    deviceDataNorms = normsOfRowSpace<FLOAT_T>(deviceData, nVectorsPerRank, nDimensions);
-    deviceCodebook = thrust::device_vector<FLOAT_T>(nSomX*nSomY*nDimensions,0);
-    deviceCodebookNorms = thrust::device_vector<FLOAT_T>(nSomX*nSomY,0);
+    
+    try {
+      //deviceData = thrust::device_vector<FLOAT_T>(hostData, hostData+nVectorsPerRank*nDimensions);
+      //deviceDataPtr = thrust::device_pointer_cast(thrust::raw_pointer_cast(&deviceData[0]));
+    
+      //float * t = new float[nVectorsPerRank*nDimensions] ();
 
-}
+      CUDA_CHECK( cudaMalloc((void**)&d_ptr, nVectorsPerRank*nDimensions*sizeof(FLOAT_T)) );
+      CUDA_CHECK( cudaMemcpy(d_ptr, hostData, nVectorsPerRank*nDimensions*sizeof(FLOAT_T),  cudaMemcpyHostToDevice  ) ); 
+      //CUDA_CHECK( cudaMemcpy(d_ptr, t, nVectorsPerRank*nDimensions*sizeof(FLOAT_T),  cudaMemcpyHostToDevice  ) ); 
+      CUDA_CHECK( cudaDeviceSynchronize() );
+      //delete t;
+
+      deviceDataPtr = thrust::device_pointer_cast(d_ptr);
+
+      deviceDataNorms = normsOfRowSpace<FLOAT_T>(deviceDataPtr, nVectorsPerRank, nDimensions);
+      deviceCodebook = thrust::device_vector<FLOAT_T>(nSomX*nSomY*nDimensions,0);
+      deviceCodebookNorms = thrust::device_vector<FLOAT_T>(nSomX*nSomY,0);
+
+      std::cout<<"successfully allocated memory on GPU"<<std::endl;
+      size_t mem_tot;
+      size_t mem_free;
+      cudaMemGetInfo(&mem_free, &mem_tot);
+      std::cout << "Free memory : " << float(mem_free)/1024./1024.<< " mb ("<< float(mem_free)*100./mem_tot <<"%)"<< std::endl;
+     
+      } catch( std::bad_alloc &e){
+          std::cerr<<"Couldn't allocate device vectors: " << e.what() <<std::endl;
+          my_abort(-1);
+      }
+   
+} 
 
 /** Check and initialize a device attached to a node
  * @param commRank - the MPI rank of this process
@@ -385,7 +418,7 @@ void trainOneEpochDenseGPU(int itask, FLOAT_T *data, FLOAT_T *numerator,
                         FLOAT_T neighbor_fuct = getWeight(dist, radius, scale);
                         localDenominator[som_y*nSomX + som_x] += neighbor_fuct;
                          
-                        CUBLAS_CHECK( cublasSaxpy(handle,  nDimensions, &neighbor_fuct, thrust::raw_pointer_cast(&deviceData[0])+ n*nDimensions,1, d_y, 1) );                       
+                        CUBLAS_CHECK( cublasSaxpy(handle,  nDimensions, &neighbor_fuct, deviceDataPtr.get() + n*nDimensions,1, d_y, 1) );                       
                     }
                 }
                 
