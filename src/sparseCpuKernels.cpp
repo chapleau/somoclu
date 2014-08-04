@@ -24,6 +24,8 @@
 #include <Rconfig.h>
 #endif
 
+#include <limits>
+
 /** Distance b/w a feature vector and a weight vector
  * = Euclidean
  * @param som_y
@@ -60,8 +62,8 @@ void get_bmu_coord(FLOAT_T* codebook, svm_node **sparseData,
                    unsigned int nSomY, unsigned int nSomX,
                    unsigned int nDimensions, int* coords, int* coords2, unsigned int n)
 {
-    FLOAT_T mindist = 9999.99;
-    FLOAT_T mindist2 = 9999.99;
+    FLOAT_T mindist = std::numeric_limits<FLOAT_T>::max();
+    FLOAT_T mindist2 = std::numeric_limits<FLOAT_T>::max();
     FLOAT_T dist = 0.0f;
 
     /// Check nSomX * nSomY nodes one by one and compute the distance

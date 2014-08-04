@@ -2,6 +2,8 @@
 #include<cmath>
 #include<stdlib.h>
 
+#include "boost/random.hpp"
+
 FLOAT_T linearCooling(FLOAT_T start, FLOAT_T end, FLOAT_T nEpoch, FLOAT_T epoch) {
   FLOAT_T diff = (start - end) / (nEpoch-1);
   return start - (epoch * diff);
@@ -35,15 +37,29 @@ void initializeCodebook(unsigned int seed, FLOAT_T *codebook, unsigned int nSomX
     ///
     /// Fill initial random weights
     ///
-    srand(seed);
+
+    boost::mt19937 rng;//, rng_i;
+    boost::uniform_real<FLOAT_T> u(0,1);
+    //boost::uniform_real<FLOAT_T> u_i(0,1);
+    boost::variate_generator<boost::mt19937&, boost::uniform_real<FLOAT_T> > gen(rng, u);
+    //boost::variate_generator<boost::mt19937&, boost::uniform_real<FLOAT_T> > gen_i(rng_i, u_i);
+    gen.engine().seed(seed);
+    gen.distribution().reset();
+    //gen_i.engine().seed(seed+1);
+    //gen_i.distribution().reset();
+
     for (unsigned int som_y = 0; som_y < nSomY; som_y++) {
         for (unsigned int som_x = 0; som_x < nSomX; som_x++) {
+            double norm = 0.0;
             for (unsigned int d = 0; d < nDimensions; d++) {
-                int w = 0xFFF & rand();
-                //w -= 0x800; //non-zero values
-                codebook[som_y*nSomX*nDimensions+som_x*nDimensions+d] = (FLOAT_T)w / 4096.0f;
+                //10% of non-zero values, on average
+                //if ( gen_i() > 0.10) codebook[som_y*nSomX*nDimensions+som_x*nDimensions+d] = 0.0;
+                FLOAT_T rn = gen();
+                codebook[som_y*nSomX*nDimensions+som_x*nDimensions+d] = rn;
+                norm += (rn*rn);
             }
-        }
+            for (unsigned int d = 0; d < nDimensions; d++) codebook[som_y*nSomX*nDimensions+som_x*nDimensions+d] *= std::sqrt(nDimensions/3./norm);
+         }
     }
 }
 

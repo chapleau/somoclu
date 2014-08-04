@@ -260,16 +260,8 @@ void initializeGpu(FLOAT_T *hostData, int nVectorsPerRank, int nDimensions, int 
     }
     
     try {
-      //deviceData = thrust::device_vector<FLOAT_T>(hostData, hostData+nVectorsPerRank*nDimensions);
-      //deviceDataPtr = thrust::device_pointer_cast(thrust::raw_pointer_cast(&deviceData[0]));
-    
-      //float * t = new float[nVectorsPerRank*nDimensions] ();
-
       CUDA_CHECK( cudaMalloc((void**)&d_ptr, nVectorsPerRank*nDimensions*sizeof(FLOAT_T)) );
       CUDA_CHECK( cudaMemcpy(d_ptr, hostData, nVectorsPerRank*nDimensions*sizeof(FLOAT_T),  cudaMemcpyHostToDevice  ) ); 
-      //CUDA_CHECK( cudaMemcpy(d_ptr, t, nVectorsPerRank*nDimensions*sizeof(FLOAT_T),  cudaMemcpyHostToDevice  ) ); 
-      CUDA_CHECK( cudaDeviceSynchronize() );
-      //delete t;
 
       deviceDataPtr = thrust::device_pointer_cast(d_ptr);
 
