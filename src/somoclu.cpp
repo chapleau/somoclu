@@ -46,7 +46,7 @@ void processCommandLine(int argc, char** argv, string *inFilename,
                         string *scaleCooling,
                         unsigned int *nSomX, unsigned int *nSomY,
                         unsigned int *kernelType, string *mapType,
-                        unsigned int *snapshots, string *initialCodebookFilename);
+                        unsigned int *snapshots, string *initialCodebookFilename, int* , int*);
 
 /* -------------------------------------------------------------------------- */
 int main(int argc, char** argv)
@@ -81,13 +81,16 @@ int main(int argc, char** argv)
     string initialCodebookFilename;
     string outPrefix;
 
+    int seed = 123;
+    int gpu_thread_num = 0;
+
     if (rank==0) {
         processCommandLine(argc, argv, &inFilename, &outPrefix,
                            &nEpoch, &radius0, &radiusN, &radiusCooling,
                            &scale0, &scaleN, &scaleCooling,
                            &nSomX, &nSomY,
                            &kernelType, &mapType, &snapshots,
-                           &initialCodebookFilename);
+                           &initialCodebookFilename, &seed, &gpu_thread_num);
 #ifndef CUDA
         if (kernelType == DENSE_GPU) {
             cerr << "Somoclu was compile without GPU support!\n";
@@ -194,7 +197,7 @@ int main(int argc, char** argv)
           nEpoch, radius0, radiusN, radiusCooling,
           scale0, scaleN, scaleCooling,
           outPrefix, snapshots, kernelType, mapType,
-          initialCodebookFilename);
+          initialCodebookFilename, seed, gpu_thread_num);
 
     if (kernelType == DENSE_CPU || kernelType == DENSE_GPU) {
         delete [] data;
@@ -254,7 +257,7 @@ void processCommandLine(int argc, char** argv, string *inFilename,
                         string *scaleCooling,
                         unsigned int *nSomX, unsigned int *nSomY,
                         unsigned int *kernelType, string *mapType,
-                        unsigned int *snapshots, string *initialCodebookFilename) {
+                        unsigned int *snapshots, string *initialCodebookFilename, int* seed, int* gpu_thread_num) {
 
     // Setting default values
     *nEpoch = N_EPOCH;
@@ -278,9 +281,15 @@ void processCommandLine(int argc, char** argv, string *inFilename,
     int c;
     extern int optind, optopt;
     int option_index = 0;
-    while ((c = getopt_long (argc, argv, "hx:y:e:k:l:m:r:s:t:c:L:R:T:",
+    while ((c = getopt_long (argc, argv, "hx:y:e:k:l:m:r:s:t:c:L:R:T:i:g:",
                              long_options, &option_index)) != -1) {
         switch (c) {
+        case 'i':
+            *seed = atoi(optarg);
+            break;
+        case 'g':
+            *gpu_thread_num = atoi(optarg);
+            break;
         case 'c':
             *initialCodebookFilename = optarg;
             break;          

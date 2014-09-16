@@ -92,7 +92,7 @@ core_data trainOneEpoch(int itask, FLOAT_T *data, svm_node **sparseData,
            string radiusCooling,
            FLOAT_T scale0, FLOAT_T scaleN,
            string scaleCooling,
-           unsigned int kernelType, string mapType);                             
+           unsigned int kernelType, string mapType, int);                             
 void train(int itask, FLOAT_T *data, svm_node **sparseData, 
            unsigned int nSomX, unsigned int nSomY, 
            unsigned int nDimensions, unsigned int nVectors, 
@@ -103,7 +103,7 @@ void train(int itask, FLOAT_T *data, svm_node **sparseData,
            string scaleCooling,
            string outPrefix, unsigned int snapshots, 
            unsigned int kernelType, string mapType,
-           string initialCodebookFilename);
+           string initialCodebookFilename, int , int);
 void trainOneEpochDenseCPU(int itask, FLOAT_T *data, FLOAT_T *numerator, 
                            FLOAT_T *denominator, FLOAT_T *codebook, 
                            unsigned int nSomX, unsigned int nSomY, 
@@ -142,7 +142,7 @@ void trainOneEpochDenseGPU(int itask, FLOAT_T *data, FLOAT_T *numerator,
                            unsigned int nSomX, unsigned int nSomY, 
                            unsigned int nDimensions, unsigned int nVectors,
                            unsigned int nVectorsPerRank, FLOAT_T radius,
-                           FLOAT_T scale, string mapType, int *globalBmus);
+                           FLOAT_T scale, string mapType, int *globalBmus, int);
 #endif                           
 void my_abort(int err);
 }

@@ -70,7 +70,7 @@ void train(int itask, FLOAT_T *data, svm_node **sparseData,
            string scaleCooling,
            string outPrefix, unsigned int snapshots,
            unsigned int kernelType, string mapType,
-           string initialCodebookFilename)
+           string initialCodebookFilename, int seed, int gpu_thread_num)
 {
     ///
     /// Codebook
@@ -84,7 +84,7 @@ void train(int itask, FLOAT_T *data, svm_node **sparseData,
         coreData.globalBmus = new int[nVectorsPerRank*int(ceil(nVectors/(double)nVectorsPerRank))*2];
         coreData.global2ndBmus = new int[nVectorsPerRank*int(ceil(nVectors/(double)nVectorsPerRank))*2];
         if (initialCodebookFilename.empty()){
-            initializeCodebook(123, coreData.codebook, nSomX, nSomY, nDimensions);
+            initializeCodebook(seed, coreData.codebook, nSomX, nSomY, nDimensions);
         } else {
             unsigned int nSomXY = 0;
             unsigned int tmpNDimensions = 0;
@@ -139,7 +139,7 @@ void train(int itask, FLOAT_T *data, svm_node **sparseData,
                                  radiusCooling,
                                  scale0, scaleN,
                                  scaleCooling,
-                                 kernelType, mapType);
+                                 kernelType, mapType, gpu_thread_num);
 
         if (snapshots > 0 && itask == 0) {
             cout << "Saving interim U-Matrix..." << endl;

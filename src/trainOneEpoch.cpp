@@ -34,6 +34,7 @@ FLOAT_T exponentialCooling(FLOAT_T start, FLOAT_T end, FLOAT_T nEpoch, FLOAT_T e
 void initializeCodebook(unsigned int seed, FLOAT_T *codebook, unsigned int nSomX,
                         unsigned int nSomY, unsigned int nDimensions)
 {
+    std::cout<<"seed: "<<seed<<std::endl;
     ///
     /// Fill initial random weights
     ///
@@ -73,7 +74,7 @@ core_data trainOneEpoch(int itask, FLOAT_T *data, svm_node **sparseData,
            string radiusCooling,
            FLOAT_T scale0, FLOAT_T scaleN,
            string scaleCooling,
-           unsigned int kernelType, string mapType){
+           unsigned int kernelType, string mapType, int gpu_thread_num){
 
     FLOAT_T N = (FLOAT_T)nEpoch;
     FLOAT_T *numerator;
@@ -127,7 +128,7 @@ core_data trainOneEpoch(int itask, FLOAT_T *data, svm_node **sparseData,
         trainOneEpochDenseGPU(itask, data, numerator, denominator,
                               coreData.codebook, nSomX, nSomY, nDimensions,
                               nVectors, nVectorsPerRank, radius, scale,
-                              mapType, coreData.globalBmus);
+                              mapType, coreData.globalBmus, gpu_thread_num);
         break;
 #endif
     case SPARSE_CPU:

@@ -371,7 +371,7 @@ void trainOneEpochDenseGPU(int itask, FLOAT_T *data, FLOAT_T *numerator,
                            unsigned int nSomX, unsigned int nSomY,
                            unsigned int nDimensions, unsigned int nVectors,
                            unsigned int nVectorsPerRank, FLOAT_T radius,
-                           FLOAT_T scale, string mapType, int *globalBmus)
+                           FLOAT_T scale, string mapType, int *globalBmus, int gpu_thread_num)
 {
     int bmus[nVectorsPerRank*2];
     getBmusOnGpu(bmus, codebook, nSomX, nSomY, nDimensions, nVectorsPerRank);
@@ -392,7 +392,7 @@ void trainOneEpochDenseGPU(int itask, FLOAT_T *data, FLOAT_T *numerator,
         /// Accumulate denoms and numers
         #pragma omp for schedule(dynamic)
         for (unsigned int som_y = 0; som_y < nSomY; som_y++) {
-          if ( omp_get_thread_num() == 0) {
+          if ( omp_get_thread_num() == gpu_thread_num) {
              //use GPU   
              for (unsigned int som_x = 0; som_x < nSomX; som_x++) {
                 FLOAT_T * d_y = 0;
